@@ -416,7 +416,7 @@ ej.grids.Grid.Inject(
         maxPoolSizeNum    = new ej.inputs.NumericTextBox({ value: 500,  min: 10, max: 10000, format: 'n0', change: rebuildGrid });
         maxPoolSizeNum.appendTo('#maxPoolSizeInput');
 
-        rowHeightNum      = new ej.inputs.NumericTextBox({ value: null, min: 20, max: 300,   format: 'n0', placeholder: 'Auto', change: rebuildGrid });
+        rowHeightNum      = new ej.inputs.NumericTextBox({ value: 50, min: 20, max: 300,   format: 'n0', placeholder: 'Auto', change: rebuildGrid });
         rowHeightNum.appendTo('#rowHeightInput');
 
         var checkboxIds = [
