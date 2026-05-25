@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Grid - DOM Row Virtualization Demo</title>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Grid Checkbox Filter Demo" />
+    <meta name="author" content="Syncfusion" />
+    <link href="https://cdn.syncfusion.com/ej2/33.2.3/material3.css" rel="stylesheet">
+    <script src="ej2.min.js"></script>
+    <script src="data.js"></script>
+    <script src="https://cdn.syncfusion.com/ej2/syncfusion-helper.js"></script> 
+    <style>
+        /* --- Status badge base --- */
+        .virtual-statustemp {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 10px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 20px;
+        }
+        .virtual-statustxt {
+            white-space: nowrap;
+        }
+
+        /* --- Order Status colors --- */
+        .e-deliveredcolor { background: #e8f5e9; color: #2e7d32; }
+        .e-shippedcolor   { background: #e3f2fd; color: #1565c0; }
+        .e-packedcolor    { background: #fff3e0; color: #e65100; }
+        .e-processingcolor{ background: #f3e5f5; color: #7b1fa2; }
+        .e-cancelcolor    { background: #ffebee; color: #c62828; }
+        .e-returnedcolor  { background: #fce4ec; color: #ad1457; }
+        .e-orderedcolor   { background: #e8eaf6; color: #283593; }
+
+        /* --- Priority colors --- */
+        .e-highcolor     { background: #ffebee; color: #c62828; }
+        .e-mediumcolor   { background: #fff3e0; color: #e65100; }
+        .e-lowcolor      { background: #e3f2fd; color: #1565c0; }
+        .e-criticalcolor { background: #f3e5f5; color: #6a1b9a; }
+
+        /* --- Payment Status colors --- */
+        .e-paidcolor    { background: #e8f5e9; color: #2e7d32; }
+        .e-pendingcolor { background: #fff8e1; color: #f57f17; }
+        .e-refundcolor  { background: #e3f2fd; color: #1565c0; }
+        .e-failedcolor  { background: #ffebee; color: #c62828; }
+
+        /* --- Customer avatar --- */
+        .customer-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .customer-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        /* --- Category badge --- */
+        .category-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 3px 10px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        /* --- Product badge --- */
+        .product-badge {
+            background: #f3e5f5;
+            color: #7b1fa2;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        /* --- Country badge --- */
+        .country-badge {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        /* --- Email link --- */
+        .email-link {
+            color: #1976d2;
+            text-decoration: none;
+        }
+        .email-link:hover {
+            text-decoration: underline;
+        }
+
+        /* --- Payment info --- */
+        .e-payment-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .e-payment-info img {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* --- Rating --- */
+        .custom-rating {
+            display: inline-flex;
+        }
+
+        /* --- Detail template --- */
+        .detail-template-container {
+            padding: 16px 20px;
+            background: #fafafa;
+            border-radius: 4px;
+        }
+        .detail-template-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .detail-item strong {
+            color: #616161;
+            font-size: 12px;
+            display: block;
+            margin-bottom: 2px;
+        }
+    </style>
+</head>
+
+<body>
+<!-- Templates used by virtualColumns -->
+<template>
+    <input class="rating">
+</template>
+<script type="text/x-jsrender" id="ratingTemplate">
+    ${ratingDetail(data)}
+</script>
+<script type="text/x-jsrender" id="priorityTemplate">
+    ${priorityDetail(data)}
+</script>
+<script type="text/x-jsrender" id="paymentStatusTemplate">
+    ${paymentStatusDetail(data)}
+</script>
+<script type="text/x-jsrender" id="orderStatusTemplate">
+    ${orderStatusDetail(data)}
+</script>
+<script type="text/x-jsrender" id="rowTemplate">
+    ${rowDetail(data)}
+</script>
+<script type="text/x-jsrender" id="detailTemplate">
+    ${detailTemplateContent(data)}
+</script>
+<script type="text/x-jsrender" id="paymentTemplate">
+    ${paymentTemplate(data)}
+</script>
+
+    <div>
+        <div style="margin-bottom: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 4px;">
+            <h4 style="margin-top: 0; margin-bottom: 15px; font-weight: 600;">Grid Feature Controls</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <!-- Row 1: Filtering -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="filterCheckbox" class="e-checkbox" />
+                    <span>Enable Filtering</span>
+                </label>
+                <!-- Row 1: Sorting -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="sortingCheckbox" class="e-checkbox" />
+                    <span>Enable Sorting</span>
+                </label>
+                <!-- Row 1: Paging -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="pagingCheckbox" class="e-checkbox" />
+                    <span>Enable Paging</span>
+                </label>
+                <!-- Row 2: Grouping -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="groupingCheckbox" class="e-checkbox" />
+                    <span>Enable Grouping</span>
+                </label>
+                <!-- Row 2: Row Reorder -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="rowReorderCheckbox" class="e-checkbox" />
+                    <span>Enable Row Reorder</span>
+                </label>
+                <!-- Row 2: Column Reorder -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="columnReorderCheckbox" class="e-checkbox" />
+                    <span>Enable Column Reorder</span>
+                </label>
+                <!-- Row 3: Resizing -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="resizingCheckbox" class="e-checkbox" />
+                    <span>Enable Resizing</span>
+                </label>
+                <!-- Row 3: Column Chooser -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="columnChooserCheckbox" class="e-checkbox" />
+                    <span>Enable Column Chooser</span>
+                </label>
+                <!-- Row 3: Aggregate -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="aggregateCheckbox" class="e-checkbox" />
+                    <span>Enable Aggregate</span>
+                </label>
+                <!-- Row 4: Context Menu -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="contextMenuCheckbox" class="e-checkbox" />
+                    <span>Enable Context Menu</span>
+                </label>
+                <!-- Row 4: RTL -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="rtlCheckbox" class="e-checkbox" />
+                    <span>Enable RTL</span>
+                </label>
+                <!-- Row 4: Frozen Rows/Columns -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="frozenCheckbox" class="e-checkbox" />
+                    <span>Enable Frozen</span>
+                </label>
+                <!-- Pinned Rows -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="pinnedRowsCheckbox" class="e-checkbox" />
+                    <span>Enable Pinned Rows</span>
+                </label>
+                <!-- Row 6: Text Wrap -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="textWrapCheckbox" class="e-checkbox" />
+                    <span>Enable Text Wrap</span>
+                </label>
+                <!-- Row 7: Hierarchy Grid -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="hierarchyGridCheckbox" class="e-checkbox" />
+                    <span>Enable Hierarchy Grid</span>
+                </label>
+                <!-- Row 7: Detail Template -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="detailTemplateCheckbox" class="e-checkbox" />
+                    <span>Enable Detail Template</span>
+                </label>
+                <!-- Row 8: Row Span -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="rowSpanCheckbox" class="e-checkbox" />
+                    <span>Enable Row Span</span>
+                </label>
+                <!-- Row 8: Col Span -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="colSpanCheckbox" class="e-checkbox" />
+                    <span>Enable Col Span</span>
+                </label>
+                <!-- Row 8: Checkbox Selection -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="checkboxSelectionCheckbox" class="e-checkbox" />
+                    <span>Enable Checkbox Selection</span>
+                </label>
+                <!-- Row 9: Row Template -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="rowTemplateCheckbox" class="e-checkbox" />
+                    <span>Enable Row Template</span>
+                </label>
+                <!-- Virtual Scroll -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="virtualScrollCheckbox" class="e-checkbox" />
+                    <span>Enable Virtual Scroll</span>
+                </label>
+                <!-- Editing -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="editingCheckbox" class="e-checkbox" />
+                    <span>Enable Editing</span>
+                </label>
+                <!-- Export -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="exportCheckbox" class="e-checkbox" />
+                    <span>Enable Export (Excel/PDF/CSV)</span>
+                </label>
+                <!-- Search -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="searchCheckbox" class="e-checkbox" />
+                    <span>Enable Search</span>
+                </label>
+                <!-- Filter Type -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <span style="white-space: nowrap;">Filter Type:</span>
+                    <input type="text" id="filterTypeDropdown" />
+                </label>
+                <!-- Edit Mode -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <span style="white-space: nowrap;">Edit Mode:</span>
+                    <input type="text" id="editModeDropdown" />
+                </label>
+                <!-- Selection Mode -->
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <span style="white-space: nowrap;">Selection Mode:</span>
+                    <input type="text" id="selectionModeDropdown" />
+                </label>
+            </div>
+        </div>
+        <!-- DOM Row Virtualization Settings Panel -->
+        <div style="margin-bottom: 20px; padding: 15px; background-color: #e8f0fe; border-radius: 4px; border-left: 4px solid #1565c0;">
+            <h4 style="margin-top: 0; margin-bottom: 15px; font-weight: 600; color: #1565c0;">DOM Row Virtualization Settings</h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="domVirtualizationCheckbox" class="e-checkbox" />
+                    <span>Enable Dom Virtualization</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="setRowHeightCheckbox" class="e-checkbox" />
+                    <span>setRowHeight Callback <small style="color:#777">(Critical=90 High=70 Medium=55 Low=45)</small></span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="autoRowHeightCheckbox" class="e-checkbox" />
+                    <span>Auto Row Height</span>
+                </label>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <span style="white-space: nowrap; min-width: 95px;">Row Buffer:</span>
+                    <input id="rowBufferInput" style="width: 80px;" />
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <span style="white-space: nowrap; min-width: 140px;">Scroll Throttle (ms):</span>
+                    <input id="scrollThrottleInput" style="width: 80px;" />
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <span style="white-space: nowrap; min-width: 100px;">Max Pool Size:</span>
+                    <input id="maxPoolSizeInput" style="width: 80px;" />
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <span style="white-space: nowrap; min-width: 105px;">Row Height (px):</span>
+                    <input id="rowHeightInput" style="width: 80px;" />
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px;">
+                    <span style="white-space: nowrap; min-width: 90px;">Data Count:</span>
+                    <input id="dataCountDropdown" style="width: 110px;" />
+                </label>
+            </div>
+        </div>
+        <div style="height: 500px;">
+            <div id="Grid">
+            </div>
+        </div>
+    </div>
+    <script src="index.js"></script>
+</body>
+
+</html>
